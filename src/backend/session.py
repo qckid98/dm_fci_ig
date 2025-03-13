@@ -1,4 +1,4 @@
-from instaloader import Instaloader, Profile
+from instaloader import Instaloader, Profile, TwoFactorAuthRequiredException
 from selenium import webdriver
 
 
@@ -26,6 +26,16 @@ class Session:
         """
         self.username = username
         self.loader.login(username, password)
+        self.logged_in = True
+        
+    def two_factor_login(self, username: str, password: str, code: int):
+        self.logged_in = False
+        try:
+            print("session login")
+            self.loader.login(username, password)
+        except TwoFactorAuthRequiredException:
+            print("session 2FA")
+            self.loader.two_factor_login(code)
         self.logged_in = True
 
     def clear(self):

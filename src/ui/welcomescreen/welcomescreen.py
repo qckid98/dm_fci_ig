@@ -4,8 +4,8 @@ import sys
 from functools import partial
 from threading import Thread
 
-from instaloader import BadCredentialsException, Profile, TwoFactorAuthRequiredException
-from kivy.clock import mainthread
+from instaloader import BadCredentialsException, Profile, TwoFactorAuthRequiredException, InvalidArgumentException
+from kivy.clock import mainthread, Clock
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty
 from kivy.uix.screenmanager import Screen
@@ -16,7 +16,7 @@ from kivymd.uix.dialog import MDDialog
 from backend.database import DatabaseManager
 from backend.session import Session
 from ui.accountselectscreen import AccountSelectScreen
-from ui.components import NewAccountPopup, UserCard
+from ui.components import NewAccountPopup, UserCard, twofaPopup
 
 
 class WelcomeScreen(Screen):
@@ -106,14 +106,35 @@ class WelcomeScreen(Screen):
         except BadCredentialsException:
             self.toast_Error("Invalid username or password")
             return
-
         except TwoFactorAuthRequiredException:
-            self.toast_Error("Two factor authentication is not supported")
+            print("two factor")
+            self.two_factor_bridge(username, password)
+            
+            # try:
+            #     twopopup = twofaPopup()
+            #     twopopup.open()
+            #     self.session = Session()
+            #     code = twopopup.content_cls_ids.twofa.text
+            #     self.session.two_factor_login(code)
+            #     twopopup.dismiss()
+            # except InvalidArgumentException:
+            #     self.toast_Error("No two-factor authentication pending.")
+            #     return
+            # except BadCredentialsException:
+            #     self.toast_Error("2FA verification code invalid.")
+            #     return
             return
+
 
         except Exception as e:
             self.toast_Error(e)
             return
+    @mainthread
+    def two_factor_bridge(self, username, password):
+        print("two factor bridge")
+        twopopup = twofaPopup()
+        twopopup.open()
+        twopopup.ok_button.bind(on_release=partial(self.handle_two_factor_auth, twopopup, username, password))
 
     def confirm_logout(self, widget):
         """
@@ -183,3 +204,26 @@ class WelcomeScreen(Screen):
         self.manager.switch_to(
             AccountSelectScreen(name="accountselect"), direction="left"
         )
+        
+    @mainthread
+    def handle_two_factor_auth(self, twopopup, username, password, *args):
+        try:
+            print("2FA")
+            self.session = Session()
+            code = twopopup.content_cls.ids.twofa.text
+            self.session.two_factor_login(username, password, code)
+            twopopup.dismiss()
+            profile = Profile.from_username(
+                self.session.loader.context, self.session.username
+            )
+            self.save_to_database(profile)
+            print("success 2FA")
+        except InvalidArgumentException:
+            self.toast_Error("No two-factor authentication pending.")
+            return False
+        except BadCredentialsException:
+            self.toast_Error("2FA verification code invalid.")
+            return False
+        except Exception as e:
+                self.toast_Error(e)
+                return False

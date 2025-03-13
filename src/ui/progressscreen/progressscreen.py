@@ -44,14 +44,14 @@ class ProgressScreen(Screen):
     def __init__(self, messages, accounts, **kw):
         if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
             # Running as a bundled executable (PyInstaller)
-            Builder.load_file(
-                os.path.abspath(
-                    os.path.join(os.path.dirname(__file__), "progressscreen.kv")
-                )
-            )
+            kv_file_path = os.path.join(sys._MEIPASS, "ui/progressscreen/progressscreen.kv")
         else:
             # Inside a normal Python environment
-            Builder.load_file("ui/progressscreen/progressscreen.kv")
+            kv_file_path = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "progressscreen.kv")
+            )
+        # Load the .kv file
+        Builder.load_file(kv_file_path)
         super().__init__(**kw)
         self.messages = messages
         self.accounts = accounts
@@ -212,7 +212,7 @@ class ProgressScreen(Screen):
     def _start_messages(self):
         # start the selenium driver and start sending messages
         self.session.driver = webdriver.Chrome()
-        self.session.driver.implicitly_wait(10)
+        self.session.driver.implicitly_wait(30)
         # go to instagram login
         self.session.driver.get("https://www.instagram.com/accounts/login/")
         # Enter the username
@@ -235,13 +235,13 @@ class ProgressScreen(Screen):
         # Wait for the page to load
         sleep(3)
         # Check to see if the turn on notifications button is present
+        # navigate to the messages page
+        self.session.driver.get("https://www.instagram.com/direct/inbox/")
         if self.check_if_element_exists(SELECTORS["dm_notification_disable"]):
             # Click the turn on notifications button
             self.find_element(SELECTORS["dm_notification_disable"]).click()
         # sleep for some time
         sleep(2)
-        # navigate to the messages page
-        self.session.driver.get("https://www.instagram.com/direct/inbox/")
         self.start_message_loop()
 
     def start_message_loop(self, *args):
@@ -249,49 +249,72 @@ class ProgressScreen(Screen):
         Starts the message loop
         """
         count = 0
+        user_already = ["Hana Lie"]
         for user in self.accounts:
+            self.session.driver.get("https://www.instagram.com/"+user[1])
             # set the account to processing
-            self.set_account_to_processing(count)
-            # open the user chat
-            self.find_element(SELECTORS["new_dm_btn"]).click()
-            sleep(3)
-            # Find the user search field and enter the keys
-            self.find_element(SELECTORS["dm_type_username"]).send_keys(user[1])
-            # # We press teh back key and enter the last key again to fix a bug on insta that causes the account names to not show up
-            # self.find_element(SELECTORS["dm_type_username"]).send_keys(Keys.BACKSPACE)
-            # sleep(2)
-            # self.find_element(SELECTORS["dm_type_username"]).send_keys(user[1][-1])
-            sleep(5)
-            # find the user and click on it
-            self.find_element(SELECTORS["dm_select_user"].format(user[1])).click()
-            sleep(2)
-            # click the chat button
-            self.find_element(SELECTORS["dm_start_chat_btn"]).click()
-            # select the message field
-            self.find_element(SELECTORS["dm_msg_field"]).click()
-            sleep(1)
-            for message in self.messages:
-                # start typing the message
-                self.simulate_human(message["content"])
-                # send the message
-                actions = webdriver.ActionChains(self.session.driver)
-                actions.send_keys(Keys.ENTER)
-                actions.perform()
-                sleep(5)
-            # set the account to completed
-            self.set_account_to_completed(count)
-            count += 1
-            sleep(30)
+            # self.set_account_to_processing(count)
+            # # open the user chat
+            # self.find_element(SELECTORS["new_dm_btn"]).click()
+            # sleep(3)
+            # # Find the user search field and enter the keys
+            # self.find_element(SELECTORS["dm_type_username"]).send_keys(user[1])
+            # xpath_current_account_name = self.find_element(SELECTORS["current_account_name"])
+            # current_account_name = xpath_current_account_name.text
+            # if current_account_name in user_already:
+            # # # We press teh back key and enter the last key again to fix a bug on insta that causes the account names to not show up
+            #     self.find_element(SELECTORS["dm_type_username"]).send_keys(Keys.BACKSPACE)
+            #     sleep(2)
+            #     self.find_element(SELECTORS["dm_type_username"]).send_keys(user[1][-1])
+            #     sleep(5)
+            # # find the user and click on it
+            #     self.find_element(SELECTORS["dm_select_next_user"].format(user[1])).click()
+            #     sleep(2)
+            # else:
+            # # # We press teh back key and enter the last key again to fix a bug on insta that causes the account names to not show up
+            #     self.find_element(SELECTORS["dm_type_username"]).send_keys(Keys.BACKSPACE)
+            #     sleep(2)
+            #     self.find_element(SELECTORS["dm_type_username"]).send_keys(user[1][-1])
+            #     sleep(5)
+            # # find the user and click on it
+            #     self.find_element(SELECTORS["dm_select_user"].format(user[1])).click()
+            #     sleep(2)
+            # # click the chat button
+            # self.find_element(SELECTORS["dm_start_chat_btn"]).click()
+            # # select the message field
+            # self.find_element(SELECTORS["dm_msg_field"]).click()
+            # sleep(1)
+            # account_name = self.find_element(SELECTORS['account_name'])
+            # user_already.append(account_name.text)
+            # for message in self.messages:
+            #     # start typing the message
+            #     print(message["content"])
+            #     self.simulate_human(message["content"])
+            #     # send the message
+            #     actions = webdriver.ActionChains(self.session.driver)
+            #     actions.send_keys(Keys.ENTER)
+            #     actions.perform()
+            #     sleep(5)
+            # # set the account to completed
+            # self.set_account_to_completed(count)
+            # count += 1
+            # sleep(15)
 
     def simulate_human(self, text):
         """
         Simulates human typing
         """
         for char in text:
-            sleep(0.2)
-            actions = webdriver.ActionChains(self.session.driver)
-            actions.send_keys(char)
-            actions.perform()
+            sleep(0.1)
+            print(char)
+            if char != "\n":
+                actions = webdriver.ActionChains(self.session.driver)
+                actions.send_keys(char)
+                actions.perform()
+            elif char == "\n":
+                actions = webdriver.ActionChains(self.session.driver)
+                actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT)
+                actions.perform()
 
     @mainthread
     def wrong_password(self):

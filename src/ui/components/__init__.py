@@ -10,3 +10,4 @@ from .messagemenu import MessageMenu # NOQA F401
 from .messageprogress import MessageProgress # NOQA F401
 from .newaccountpopup import NewAccountPopup # NOQA F401
 from .usercard import UserCard # NOQA F401
+from .twofapopup import twofaPopup

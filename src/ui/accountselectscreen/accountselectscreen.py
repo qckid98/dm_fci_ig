@@ -189,7 +189,7 @@ class AccountSelectScreen(Screen):
                 reader = csv.reader(file)
                 header = next(reader)  # Get the first row (header)
                 if header[0] != "Account Name":
-                    toast("Invalid CSV File. Check ")
+                    toast("Invalid CSV File. Your header must be 'Account Name' ")
                     return
                 else:
                     for row in reader:
@@ -200,7 +200,7 @@ class AccountSelectScreen(Screen):
                                 number = self.csv_temp_data[-1][0] + 1
                             else:
                                 number = 1
-                        temp = (number, row[1], ast.literal_eval(row[2]))
+                        temp = (number, row[0], "('account', 'CSV')")
                         self.csv_temp_data.append(temp)
         # Ask user if they want to validate the accounts in a dialog
         ok_button = MDRaisedButton(text="Verify")

@@ -38,19 +38,23 @@ class MessageScreen(Screen):
     message type and the message content
     """
 
-    def __init__(self, data, *args: Any, **kwds: Any) -> Any:
+    def __init__(self, data, *args: Any, **kwds: Any) -> None:
+        # Determine the path to the .kv file
         if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
             # Running as a bundled executable (PyInstaller)
-            Builder.load_file(
-                os.path.abspath(
-                    os.path.join(os.path.dirname(__file__), "messagescreen.kv")
-                )
-            )
+            kv_file_path = os.path.join(sys._MEIPASS, "ui/messagescreen/messagescreen.kv")
         else:
             # Inside a normal Python environment
-            Builder.load_file("ui/messagescreen/messagescreen.kv")
+            kv_file_path = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "messagescreen.kv")
+            )
+
+        # Load the .kv file
+        Builder.load_file(kv_file_path)
+
+        # Initialize the screen
         self.data = data
-        return super().__init__(*args, **kwds)
+        super().__init__(*args, **kwds)
 
     def show_add_message_menu(self):
         """
