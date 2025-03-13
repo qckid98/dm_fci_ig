@@ -1,5 +1,7 @@
 from instaloader import Instaloader, Profile, TwoFactorAuthRequiredException
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 
 
 class Session:
@@ -31,10 +33,8 @@ class Session:
     def two_factor_login(self, username: str, password: str, code: int):
         self.logged_in = False
         try:
-            print("session login")
             self.loader.login(username, password)
         except TwoFactorAuthRequiredException:
-            print("session 2FA")
             self.loader.two_factor_login(code)
         self.logged_in = True
 

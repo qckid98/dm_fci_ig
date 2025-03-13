@@ -107,7 +107,6 @@ class WelcomeScreen(Screen):
             self.toast_Error("Invalid username or password")
             return
         except TwoFactorAuthRequiredException:
-            print("two factor")
             self.two_factor_bridge(username, password)
             
             # try:
@@ -131,7 +130,6 @@ class WelcomeScreen(Screen):
             return
     @mainthread
     def two_factor_bridge(self, username, password):
-        print("two factor bridge")
         twopopup = twofaPopup()
         twopopup.open()
         twopopup.ok_button.bind(on_release=partial(self.handle_two_factor_auth, twopopup, username, password))
@@ -208,7 +206,6 @@ class WelcomeScreen(Screen):
     @mainthread
     def handle_two_factor_auth(self, twopopup, username, password, *args):
         try:
-            print("2FA")
             self.session = Session()
             code = twopopup.content_cls.ids.twofa.text
             self.session.two_factor_login(username, password, code)
@@ -217,7 +214,6 @@ class WelcomeScreen(Screen):
                 self.session.loader.context, self.session.username
             )
             self.save_to_database(profile)
-            print("success 2FA")
         except InvalidArgumentException:
             self.toast_Error("No two-factor authentication pending.")
             return False
