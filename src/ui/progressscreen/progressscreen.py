@@ -2,6 +2,7 @@ import os
 import sys
 from threading import Thread
 from time import sleep
+import random
 
 from kivy.clock import mainthread
 from kivy.lang import Builder
@@ -231,8 +232,11 @@ class ProgressScreen(Screen):
         chrome_options.add_argument("--disable-gpu")  # Required for headless mode
         chrome_options.add_argument("--window-size=1920,1080")  # Avoid element visibility issues
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Helps prevent detection
+        chrome_options.add_argument("--disable-popup-blocking")
         chrome_options.add_argument("--no-sandbox")  # Good for running in containers
         chrome_options.add_argument("--disable-dev-shm-usage")  # Prevents resource issues in Docker
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option("useAutomationExtension", False)
         self.session.driver = webdriver.Chrome(options=chrome_options)
         self.session.driver.implicitly_wait(30)
         # go to instagram login
@@ -246,7 +250,7 @@ class ProgressScreen(Screen):
         # Press enter key to login
         self.find_element(SELECTORS["login_password_field"]).send_keys(Keys.ENTER)
         # Check if the save login info button is present
-        sleep(8)
+        sleep(random.uniform(5,10))
         # check if the password was entered correctly again
         if self.check_if_element_exists(SELECTORS["login_error"]):
             self.wrong_password()
@@ -280,7 +284,7 @@ class ProgressScreen(Screen):
         """
         self.find_element("//input[@name='verificationCode']").send_keys(code)
         self.find_element("//input[@name='verificationCode']").send_keys(Keys.ENTER)
-        sleep(5)  # This sleep no longer freezes the UI
+        random.uniform(5,10)  # This sleep no longer freezes the UI
         self.notification_disable()
         
     def notification_disable(self, *args):
@@ -288,7 +292,7 @@ class ProgressScreen(Screen):
             # Click the save login info button
             self.find_element(SELECTORS["save_login_info"]).click()
         # Wait for the page to load
-        sleep(3)
+        sleep(random.uniform(3,5))
         
         # Check to see if the turn on notifications button is present
         # navigate to the messages page
@@ -297,7 +301,7 @@ class ProgressScreen(Screen):
             # Click the turn on notifications button
             self.find_element(SELECTORS["dm_notification_disable"]).click()
         # sleep for some time
-        sleep(2)
+        sleep(random.uniform(2,3.5))
         self.start_message_loop()
 
     def start_message_loop(self, *args):
@@ -307,7 +311,7 @@ class ProgressScreen(Screen):
         count = 0
         for user in self.accounts:
             self.session.driver.get("https://www.instagram.com/"+user[1])
-            sleep(5)
+            sleep(random.uniform(5,10))
             if self.check_if_element_exists("//div[@role='button' and .//*[local-name()='svg' and @aria-label='Options']]"):
                 pass
             else:
@@ -317,15 +321,15 @@ class ProgressScreen(Screen):
             status_account = self.check_if_element_exists("//div[text()='Message']")
             if status_account != True:
                 self.find_element("//div[@role='button' and .//*[local-name()='svg' and @aria-label='Options']]").click()
-                sleep(1)
+                sleep(random.uniform(1,2))
                 self.find_element("//button[text()='Send message']").click()
-                sleep(5)
+                sleep(random.uniform(5,10))
             elif status_account == True:
                 self.find_element("//div[text()='Message']").click()
             self.set_account_to_processing(count)
-            sleep(5)
+            sleep(random.uniform(5,10))
             self.find_element(SELECTORS["dm_msg_field"]).click()
-            sleep(1)
+            sleep(random.uniform(1,2))
             for message in self.messages:
                 # start typing the message
                 self.simulate_human(message["content"])
@@ -333,11 +337,11 @@ class ProgressScreen(Screen):
                 actions = webdriver.ActionChains(self.session.driver)
                 actions.send_keys(Keys.ENTER)
                 actions.perform()
-                sleep(5)
+                sleep(random.uniform(5,10))
             # set the account to completed
             self.set_account_to_completed(count)
             count += 1
-            sleep(15)
+            sleep(random.uniform(15,30))
             # set the account to processing
             # self.set_account_to_processing(count)
             # # open the user chat
@@ -391,7 +395,7 @@ class ProgressScreen(Screen):
         Simulates human typing
         """
         for char in text:
-            sleep(0.05)
+            sleep(random.uniform(0.05,0.2))
             if char != "\n":
                 actions = webdriver.ActionChains(self.session.driver)
                 actions.send_keys(char)
