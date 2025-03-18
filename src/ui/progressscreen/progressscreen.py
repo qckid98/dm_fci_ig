@@ -310,22 +310,24 @@ class ProgressScreen(Screen):
         """
         count = 0
         for user in self.accounts:
+            if count % 50 == 0:
+                sleep(1800)
             self.session.driver.get("https://www.instagram.com/"+user[1])
             sleep(random.uniform(5,10))
-            if self.check_if_element_exists("//div[@role='button' and .//*[local-name()='svg' and @aria-label='Options']]"):
+            if self.check_if_element_exists(SELECTORS["options_button"]):
                 pass
             else:
                 self.set_account_to_invalid(count)
                 count += 1
                 continue
-            status_account = self.check_if_element_exists("//div[text()='Message']")
+            status_account = self.check_if_element_exists(SELECTORS["message_button"])
             if status_account != True:
-                self.find_element("//div[@role='button' and .//*[local-name()='svg' and @aria-label='Options']]").click()
+                self.find_element(SELECTORS["options_button"]).click()
                 sleep(random.uniform(1,2))
-                self.find_element("//button[text()='Send message']").click()
+                self.find_element(SELECTORS["send_message_button"]).click()
                 sleep(random.uniform(5,10))
             elif status_account == True:
-                self.find_element("//div[text()='Message']").click()
+                self.find_element(SELECTORS["message_button"]).click()
             self.set_account_to_processing(count)
             sleep(random.uniform(5,10))
             self.find_element(SELECTORS["dm_msg_field"]).click()
