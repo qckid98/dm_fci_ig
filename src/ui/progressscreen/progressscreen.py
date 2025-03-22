@@ -310,7 +310,9 @@ class ProgressScreen(Screen):
         """
         count = 0
         for user in self.accounts:
-            if count % 50 == 0:
+            if count == 0:
+                pass
+            elif count % 50 == 0:
                 sleep(1800)
             self.session.driver.get("https://www.instagram.com/"+user[1])
             sleep(random.uniform(5,10))
@@ -330,7 +332,12 @@ class ProgressScreen(Screen):
                 self.find_element(SELECTORS["message_button"]).click()
             self.set_account_to_processing(count)
             sleep(random.uniform(5,10))
-            self.find_element(SELECTORS["dm_msg_field"]).click()
+            if self.check_if_element_exists(SELECTORS["dm_msg_field"]):
+                self.find_element(SELECTORS["dm_msg_field"]).click()
+            else:
+                self.set_account_to_invalid(count)
+                count += 1
+                continue
             sleep(random.uniform(1,2))
             for message in self.messages:
                 # start typing the message
