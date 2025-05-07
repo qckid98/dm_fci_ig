@@ -2,7 +2,7 @@ from kivymd.uix.menu import MDDropdownMenu
 
 
 class MessageMenu(MDDropdownMenu):
-    def __init__(self, text, link, post, **kwargs):
+    def __init__(self, text, link, post, pictures, **kwargs):
         super().__init__(**kwargs)
         self.items = [
             {
@@ -21,7 +21,8 @@ class MessageMenu(MDDropdownMenu):
                 "on_release": post,
             },
             {
-                "text": "Pictures (Coming Soon)",
-                "leading_icon": "multimedia",
+                "text": "Pictures",
+                "leading_icon": "image",
+                "on_release": pictures,
             },
         ]

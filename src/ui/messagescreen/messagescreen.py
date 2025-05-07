@@ -11,7 +11,7 @@ from kivymd.uix.dialog import MDDialog
 from selenium import webdriver
 
 from ui.components import MessageMenu
-from ui.components.message_components import LinkMessage, PostMessage, TextMessage
+from ui.components.message_components import LinkMessage, PostMessage, TextMessage, PicturesMessage
 from ui.progressscreen import ProgressScreen
 
 
@@ -64,6 +64,7 @@ class MessageScreen(Screen):
             text=self.add_text_message,
             link=self.add_link_message,
             post=self.add_post_message,
+            pictures=self.add_pictures_message,
             caller=self.ids.add_message,
         )
         self.add_message_menu.open()
@@ -88,6 +89,13 @@ class MessageScreen(Screen):
         """
         self.add_message_menu.dismiss()
         self.ids.message_container.add_widget(PostMessage())
+
+    def add_pictures_message(self):
+        """
+        Adds a pictures message to the message box
+        """
+        self.add_message_menu.dismiss()
+        self.ids.message_container.add_widget(PicturesMessage())
 
     def check_if_can_add(self):
         """

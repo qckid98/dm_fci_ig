@@ -3,6 +3,9 @@ import sys
 from threading import Thread
 from time import sleep
 import random
+import pyperclip
+from PIL import Image
+import io
 
 from kivy.clock import mainthread
 from kivy.lang import Builder
@@ -228,13 +231,13 @@ class ProgressScreen(Screen):
     def _start_messages(self):
         # start the selenium driver and start sending messages
         chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Run in headless mode
-        chrome_options.add_argument("--disable-gpu")  # Required for headless mode
+        # chrome_options.add_argument("--headless")  # Run in headless mode
+        # chrome_options.add_argument("--disable-gpu")  # Required for headless mode
         chrome_options.add_argument("--window-size=1920,1080")  # Avoid element visibility issues
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Helps prevent detection
         chrome_options.add_argument("--disable-popup-blocking")
-        chrome_options.add_argument("--no-sandbox")  # Good for running in containers
-        chrome_options.add_argument("--disable-dev-shm-usage")  # Prevents resource issues in Docker
+        # chrome_options.add_argument("--no-sandbox")  # Good for running in containers
+        # chrome_options.add_argument("--disable-dev-shm-usage")  # Prevents resource issues in Docker
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option("useAutomationExtension", False)
         self.session.driver = webdriver.Chrome(options=chrome_options)
@@ -340,63 +343,45 @@ class ProgressScreen(Screen):
                 continue
             sleep(random.uniform(1,2))
             for message in self.messages:
-                # start typing the message
-                self.simulate_human(message["content"])
-                # send the message
-                actions = webdriver.ActionChains(self.session.driver)
-                actions.send_keys(Keys.ENTER)
-                actions.perform()
-                sleep(random.uniform(5,10))
+                if message["type"] == "PicturesMessage":
+                    try:
+                        # Load the image
+                        image_path = message["content"]
+                        if not os.path.exists(image_path):
+                            toast(f"Image not found: {image_path}")
+                            continue
+                            
+                        # Open and prepare image for clipboard
+                        img = Image.open(image_path)
+                        output = io.BytesIO()
+                        img.save(output, 'BMP')
+                        data = output.getvalue()[14:]
+                        output.close()
+                        
+                        # Copy image to clipboard
+                        pyperclip.copy(data)
+                        sleep(random.uniform(1,2))
+                        
+                        # Paste the image (Ctrl+V)
+                        actions = webdriver.ActionChains(self.session.driver)
+                        actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
+                        actions.perform()
+                        sleep(random.uniform(2,3))
+                    except Exception as e:
+                        toast(f"Error sending image: {str(e)}")
+                        continue
+                else:
+                    # Handle other message types as before
+                    self.simulate_human(message["content"])
+                    
+            actions = webdriver.ActionChains(self.session.driver)
+            actions.send_keys(Keys.ENTER)
+            actions.perform()
+            sleep(random.uniform(5,10))
             # set the account to completed
             self.set_account_to_completed(count)
             count += 1
             sleep(random.uniform(15,30))
-            # set the account to processing
-            # self.set_account_to_processing(count)
-            # # open the user chat
-            # self.find_element(SELECTORS["new_dm_btn"]).click()
-            # sleep(3)
-            # # Find the user search field and enter the keys
-            # self.find_element(SELECTORS["dm_type_username"]).send_keys(user[1])
-            # xpath_current_account_name = self.find_element(SELECTORS["current_account_name"])
-            # current_account_name = xpath_current_account_name.text
-            # if current_account_name in user_already:
-            # # # We press teh back key and enter the last key again to fix a bug on insta that causes the account names to not show up
-            #     self.find_element(SELECTORS["dm_type_username"]).send_keys(Keys.BACKSPACE)
-            #     sleep(2)
-            #     self.find_element(SELECTORS["dm_type_username"]).send_keys(user[1][-1])
-            #     sleep(5)
-            # # find the user and click on it
-            #     self.find_element(SELECTORS["dm_select_next_user"].format(user[1])).click()
-            #     sleep(2)
-            # else:
-            # # # We press teh back key and enter the last key again to fix a bug on insta that causes the account names to not show up
-            #     self.find_element(SELECTORS["dm_type_username"]).send_keys(Keys.BACKSPACE)
-            #     sleep(2)
-            #     self.find_element(SELECTORS["dm_type_username"]).send_keys(user[1][-1])
-            #     sleep(5)
-            # # find the user and click on it
-            #     self.find_element(SELECTORS["dm_select_user"].format(user[1])).click()
-            #     sleep(2)
-            # # click the chat button
-            # self.find_element(SELECTORS["dm_start_chat_btn"]).click()
-            # # select the message field
-            # self.find_element(SELECTORS["dm_msg_field"]).click()
-            # sleep(1)
-            # account_name = self.find_element(SELECTORS['account_name'])
-            # user_already.append(account_name.text)
-            # for message in self.messages:
-            #     # start typing the message
-            #     self.simulate_human(message["content"])
-            #     # send the message
-            #     actions = webdriver.ActionChains(self.session.driver)
-            #     actions.send_keys(Keys.ENTER)
-            #     actions.perform()
-            #     sleep(5)
-            # # set the account to completed
-            # self.set_account_to_completed(count)
-            # count += 1
-            # sleep(15)
         self.session.driver.quit()
 
     def simulate_human(self, text):
