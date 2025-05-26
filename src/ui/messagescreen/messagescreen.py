@@ -137,15 +137,26 @@ class MessageScreen(Screen):
         """
         self.confirm_send_dialogue.dismiss()
         for message in self.ids.message_container.children:
-            if message.ids.content.text == "":
-                toast("Please fill in all fields")
-                return
-            self.messages.append(
-                {
-                    "type": message.__class__.__name__,
-                    "content": message.ids.content.text,
-                }
-            )
+            if isinstance(message, PicturesMessage):
+                if not message.image_data:
+                    toast("Please select an image")
+                    return
+                self.messages.append(
+                    {
+                        "type": message.__class__.__name__,
+                        "content": message.image_data,
+                    }
+                )
+            else:
+                if message.ids.content.text == "":
+                    toast("Please fill in all fields")
+                    return
+                self.messages.append(
+                    {
+                        "type": message.__class__.__name__,
+                        "content": message.ids.content.text,
+                    }
+                )
         self.manager.add_widget(
             ProgressScreen(name="progress", messages=self.messages, accounts=self.data)
         )

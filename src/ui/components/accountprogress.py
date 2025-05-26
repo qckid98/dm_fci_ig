@@ -31,22 +31,17 @@ Builder.load_string(
             pos: self.pos[0] - dp(3), self.pos[1] - dp(3)
             angle_start: 0
             angle_end: root.overall_progress
-
         Color:
             rgba: 0.1, 0.1, 0.1, 1
         Ellipse:
             pos: self.pos
             size: self.size
-
     size_hint: None, None
     size: dp(42), dp(42)
-
     CustomIcon:
         id: icon
         size_hint:1,1
         pos_hint: {"center_x": 0.5, "center_y": 0.5}
-
-
 
 <CustomIcon>:
     icon: "sync"

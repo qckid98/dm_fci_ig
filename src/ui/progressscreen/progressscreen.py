@@ -4,8 +4,9 @@ from threading import Thread
 from time import sleep
 import random
 import pyperclip
-from PIL import Image
+from PIL import Image, ImageGrab
 import io
+import win32clipboard
 
 from kivy.clock import mainthread
 from kivy.lang import Builder
@@ -307,82 +308,91 @@ class ProgressScreen(Screen):
         sleep(random.uniform(2,3.5))
         self.start_message_loop()
 
-    def start_message_loop(self, *args):
+    def start_message_loop(self):
         """
-        Starts the message loop
+        Starts the message sending loop
         """
-        count = 0
-        for user in self.accounts:
-            if count == 0:
-                pass
-            elif count % 50 == 0:
-                sleep(1800)
-            self.session.driver.get("https://www.instagram.com/"+user[1])
-            sleep(random.uniform(5,10))
-            if self.check_if_element_exists(SELECTORS["options_button"]):
-                pass
-            else:
-                self.set_account_to_invalid(count)
-                count += 1
-                continue
-            status_account = self.check_if_element_exists(SELECTORS["message_button"])
-            if status_account != True:
-                self.find_element(SELECTORS["options_button"]).click()
-                sleep(random.uniform(1,2))
-                self.find_element(SELECTORS["send_message_button"]).click()
+        try:
+            count = 0
+            for user in self.accounts:
+                if count == 0:
+                    pass
+                elif count % 50 == 0:
+                    sleep(1800)
+                self.session.driver.get("https://www.instagram.com/"+user[1])
                 sleep(random.uniform(5,10))
-            elif status_account == True:
-                self.find_element(SELECTORS["message_button"]).click()
-            self.set_account_to_processing(count)
-            sleep(random.uniform(5,10))
-            if self.check_if_element_exists(SELECTORS["dm_msg_field"]):
-                self.find_element(SELECTORS["dm_msg_field"]).click()
-            else:
-                self.set_account_to_invalid(count)
-                count += 1
-                continue
-            sleep(random.uniform(1,2))
-            for message in self.messages:
-                if message["type"] == "PicturesMessage":
-                    try:
-                        # Load the image
-                        image_path = message["content"]
-                        if not os.path.exists(image_path):
-                            toast(f"Image not found: {image_path}")
-                            continue
-                            
-                        # Open and prepare image for clipboard
-                        img = Image.open(image_path)
-                        output = io.BytesIO()
-                        img.save(output, 'BMP')
-                        data = output.getvalue()[14:]
-                        output.close()
-                        
-                        # Copy image to clipboard
-                        pyperclip.copy(data)
-                        sleep(random.uniform(1,2))
-                        
-                        # Paste the image (Ctrl+V)
-                        actions = webdriver.ActionChains(self.session.driver)
-                        actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
-                        actions.perform()
-                        sleep(random.uniform(2,3))
-                    except Exception as e:
-                        toast(f"Error sending image: {str(e)}")
-                        continue
+                if self.check_if_element_exists(SELECTORS["options_button"]):
+                    pass
                 else:
-                    # Handle other message types as before
-                    self.simulate_human(message["content"])
+                    self.set_account_to_invalid(count)
+                    count += 1
+                    continue
+                status_account = self.check_if_element_exists(SELECTORS["message_button"])
+                if status_account != True:
+                    self.find_element(SELECTORS["options_button"]).click()
+                    sleep(random.uniform(1,2))
+                    self.find_element(SELECTORS["send_message_button"]).click()
+                    sleep(random.uniform(5,10))
+                elif status_account == True:
+                    self.find_element(SELECTORS["message_button"]).click()
+                self.set_account_to_processing(count)
+                sleep(random.uniform(5,10))
+                if self.check_if_element_exists(SELECTORS["dm_msg_field"]):
+                    self.find_element(SELECTORS["dm_msg_field"]).click()
+                else:
+                    self.set_account_to_invalid(count)
+                    count += 1
+                    continue
+                sleep(random.uniform(1,2))
+                for message in self.messages:
+                    print(message["type"])
+                    if message["type"] == "PicturesMessage":
+                        try:
+                            # Load the image
+                            print(message["content"])
+                            image_path = message["content"]
+                            if not os.path.exists(image_path):
+                                self.show_toast(f"Image not found: {image_path}")
+                                return
+                            
+                            # Open and prepare image for clipboard
+                            img = Image.open(image_path)
+                            output = io.BytesIO()
+                            img.convert("RGB").save(output, "BMP")
+                            data = output.getvalue()
+                            data = data[14:]
+                            output.close()
+                            
+                            # Copy image to clipboard
+                            win32clipboard.OpenClipboard()
+                            win32clipboard.EmptyClipboard()
+                            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+                            win32clipboard.CloseClipboard()
+                            sleep(random.uniform(1,2))
+                            
+                            # Paste the image (Ctrl+V)
+                            actions = webdriver.ActionChains(self.session.driver)
+                            actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
+                            actions.perform()
+                            sleep(random.uniform(2,3))
+                        except Exception as e:
+                            self.show_toast(f"Error sending image: {str(e)}")
+                            return
+                    else:
+                        # Handle other message types as before
+                        self.simulate_human(message["content"])
                     
-            actions = webdriver.ActionChains(self.session.driver)
-            actions.send_keys(Keys.ENTER)
-            actions.perform()
-            sleep(random.uniform(5,10))
-            # set the account to completed
-            self.set_account_to_completed(count)
-            count += 1
-            sleep(random.uniform(15,30))
-        self.session.driver.quit()
+                actions = webdriver.ActionChains(self.session.driver)
+                actions.send_keys(Keys.ENTER)
+                actions.perform()
+                sleep(random.uniform(5,10))
+                # set the account to completed
+                self.set_account_to_completed(count)
+                count += 1
+                sleep(random.uniform(15,30))
+            self.session.driver.quit()
+        except Exception as e:
+            self.show_toast(f"Error sending message: {str(e)}")
 
     def simulate_human(self, text):
         """
@@ -434,3 +444,10 @@ class ProgressScreen(Screen):
         except Exception:
             self.session.driver.implicitly_wait(10)
             return False
+
+    @mainthread
+    def show_toast(self, message):
+        """
+        Shows a toast message from any thread
+        """
+        toast(message)

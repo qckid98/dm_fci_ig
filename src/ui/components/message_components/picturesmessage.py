@@ -107,7 +107,7 @@ class PicturesMessage(MDCard):
                         img = img.convert('RGB')
                     
                     # Resize if too large (max 1000px on longest side)
-                    max_size = 1000
+                    max_size = 10000
                     if max(img.size) > max_size:
                         ratio = max_size / max(img.size)
                         new_size = tuple(int(dim * ratio) for dim in img.size)
@@ -115,12 +115,12 @@ class PicturesMessage(MDCard):
                     
                     # Save to bytes buffer
                     buffer = io.BytesIO()
-                    img.save(buffer, format='JPEG', quality=85)
-                    self.image_data = buffer.getvalue()
+                    img.save(buffer, format='JPEG', quality=100)
                     
                     # Create a temporary file for preview
                     temp_path = os.path.join(os.path.dirname(filename), 'temp_preview.jpg')
                     img.save(temp_path, 'JPEG')
+                    self.image_data = temp_path
                     self.ids.image_preview.source = temp_path
                     
             except Exception as e:
